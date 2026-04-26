@@ -1,0 +1,21 @@
+appId: com.birdfileshield.app
+productName: BirdFileShield
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - out/**/*
+  - resources/**/*
+win:
+  target: nsis
+  icon: resources/icon.ico
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: resources/icon.icns
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

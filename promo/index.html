@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BirdFileShield — 跨平台智能文件整理 & 私钥守护工具</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root {
+  --bg-cream: #FAF9F7;
+  --bg-warm: #F3F1ED;
+  --bg-section: #EDEAE5;
+  --text-deep: #1a1a1a;
+  --text-body: #3d3d3d;
+  --text-muted: #7a7a7a;
+  --text-faint: #a8a8a8;
+  --accent: #007AFF;
+  --accent-soft: rgba(0,122,255,0.08);
+  --accent-mid: rgba(0,122,255,0.15);
+  --red: #ff3b30;
+  --green: #34c759;
+  --orange: #ff9500;
+  --yellow: #ffcc00;
+  --serif: 'Noto Serif SC', serif;
+  --sans: 'Noto Sans SC', -apple-system, sans-serif;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-soft: 0 4px 24px rgba(0,0,0,0.06);
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-heavy: 0 12px 48px rgba(0,0,0,0.12);
+}
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg-cream);
+  color: var(--text-body);
+  line-height: 1.7;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Noise Overlay ===== */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===== Layout ===== */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 40px; }
+
+section { padding: 100px 0; }
+
+/* ===== Animations ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,122,255,0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(0,122,255,0); }
+}
+
+.anim-fade-up {
+  opacity: 0;
+  animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+.anim-scale-in {
+  opacity: 0;
+  animation: scaleIn 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
+/* ===== NAV ===== */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(250,249,247,0.82);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  transition: all 0.3s;
+}
+nav .nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-deep);
+}
+.nav-logo-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.nav-logo-text {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.3px;
+}
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+.nav-links a {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--accent); }
+
+/* ===== HERO ===== */
+.hero {
+  padding-top: 160px;
+  padding-bottom: 80px;
+  text-align: center;
+  position: relative;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(0,122,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-mid);
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 28px;
+  animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+}
+.hero-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse-glow 2s infinite;
+}
+
+.hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(40px, 5.5vw, 64px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -1.5px;
+  color: var(--text-deep);
+  margin-bottom: 20px;
+  animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s both;
+}
+.hero h1 .highlight {
+  background: linear-gradient(135deg, var(--accent), #5856D6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 18px;
+  color: var(--text-muted);
+  max-width: 540px;
+  margin: 0 auto 36px;
+  line-height: 1.8;
+  animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s both;
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  background: var(--text-deep);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-primary:hover { background: #333; transform: translateY(-1px); box-shadow: var(--shadow-card); }
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  background: transparent;
+  color: var(--text-body);
+  border: 1.5px solid rgba(0,0,0,0.15);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ===== WINDOW MOCKUP ===== */
+.mac-window {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.08);
+  overflow: hidden;
+  font-size: 13px;
+}
+.mac-titlebar {
+  height: 40px;
+  background: linear-gradient(180deg, #f8f8f8, #e8e8e8);
+  border-bottom: 1px solid #d4d4d4;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 8px;
+  position: relative;
+}
+.traffic-light {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0,0,0,0.12);
+}
+.tl-red { background: #ff5f57; }
+.tl-yellow { background: #ffbd2e; }
+.tl-green { background: #28c840; }
+.mac-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a4a4a;
+}
+.mac-body {
+  display: flex;
+  min-height: 360px;
+  background: #f5f5f7;
+}
+.mac-sidebar {
+  width: 170px;
+  background: #fff;
+  border-right: 1px solid #e5e5ea;
+  padding: 14px 10px;
+  flex-shrink: 0;
+}
+.sidebar-label {
+  font-size: 10px;
+  color: #86868b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding: 0 8px;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #333;
+  cursor: default;
+  margin-bottom: 2px;
+}
+.sidebar-item.active {
+  background: var(--accent);
+  color: white;
+}
+.sidebar-icon { font-size: 15px; }
+.mac-content {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== HERO SCREENSHOT ===== */
+.hero-screenshot {
+  max-width: 800px;
+  margin: 56px auto 0;
+  animation: scaleIn 1s cubic-bezier(0.16,1,0.3,1) 0.4s both;
+  position: relative;
+}
+.hero-screenshot .mac-window {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 0.5px rgba(0,0,0,0.08);
+}
+
+/* Drop zone mockup */
+.mock-dropzone {
+  border: 2px dashed #c7c7cc;
+  border-radius: 12px;
+  padding: 36px 20px;
+  text-align: center;
+  background: white;
+  max-width: 380px;
+  margin: auto;
+}
+.mock-dropzone-icon { font-size: 36px; margin-bottom: 6px; }
+.mock-dropzone h3 { font-size: 14px; font-weight: 600; color: #1d1d1f; margin-bottom: 3px; }
+.mock-dropzone p { font-size: 11px; color: #86868b; margin-bottom: 14px; }
+.mock-btn {
+  display: inline-block;
+  padding: 6px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: default;
+}
+.mock-btn-blue { background: var(--accent); color: white; }
+.mock-input-row {
+  display: flex;
+  gap: 8px;
+  max-width: 380px;
+  margin: 14px auto 0;
+  align-items: center;
+}
+.mock-input {
+  flex: 1;
+  background: white;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #86868b;
+}
+.mock-btn-gray {
+  background: #f5f5f7;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #333;
+}
+.mock-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 380px;
+  margin: 10px auto 0;
+}
+.mock-toggle {
+  width: 34px; height: 20px;
+  background: #34c759;
+  border-radius: 10px;
+  position: relative;
+}
+.mock-toggle::after {
+  content: '';
+  width: 16px; height: 16px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  right: 2px; top: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.mock-toggle-label { font-size: 12px; color: #333; }
+
+/* ===== FEATURES ===== */
+.features {
+  background: var(--bg-warm);
+  position: relative;
+}
+.features::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06) 20%, rgba(0,0,0,0.06) 80%, transparent);
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--serif);
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  color: var(--text-deep);
+  margin-bottom: 14px;
+  line-height: 1.25;
+}
+.section-desc {
+  font-size: 16px;
+  color: var(--text-muted);
+  max-width: 520px;
+  line-height: 1.8;
+  margin-bottom: 48px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.feature-card {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-soft);
+  border-color: rgba(0,122,255,0.12);
+}
+.feature-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+.fi-blue { background: rgba(0,122,255,0.1); }
+.fi-green { background: rgba(52,199,89,0.1); }
+.fi-orange { background: rgba(255,149,0,0.1); }
+.fi-red { background: rgba(255,59,48,0.1); }
+.fi-purple { background: rgba(88,86,214,0.1); }
+.fi-teal { background: rgba(0,199,190,0.1); }
+
+.feature-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-deep);
+  margin-bottom: 8px;
+}
+.feature-card p {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* ===== SCREENSHOTS ===== */
+.screenshots {
+  background: var(--bg-cream);
+}
+.screenshot-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+.screenshot-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  background: transparent;
+  font-family: var(--sans);
+  transition: all 0.2s;
+}
+.screenshot-tab:hover { color: var(--text-body); background: rgba(0,0,0,0.03); }
+.screenshot-tab.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-mid);
+}
+.screenshot-panels { position: relative; }
+.screenshot-panel {
+  display: none;
+}
+.screenshot-panel.active {
+  display: block;
+  animation: fadeIn 0.4s ease both;
+}
+
+/* Scan result mockup specifics */
+.mock-stat-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.mock-stat-title { font-size: 16px; font-weight: 600; color: #1d1d1f; }
+.mock-stat-sub { font-size: 11px; color: #86868b; margin-top: 2px; }
+.mock-stat-actions { display: flex; gap: 8px; }
+
+.mock-category-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.mock-cat-header {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mock-cat-icon { font-size: 18px; }
+.mock-cat-info { flex: 1; }
+.mock-cat-name { font-size: 13px; font-weight: 600; color: #1d1d1f; }
+.mock-cat-meta { font-size: 10px; color: #86868b; }
+.mock-cat-chevron { font-size: 10px; color: #c7c7cc; }
+
+.mock-cat-files {
+  border-top: 1px solid #f0f0f0;
+  padding: 4px 14px 8px;
+}
+.mock-file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 11px;
+}
+.mock-file-row + .mock-file-row { border-top: 1px solid #f5f5f7; }
+.mock-checkbox {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.mock-cb-checked {
+  background: var(--accent);
+  border: 1.5px solid var(--accent);
+  position: relative;
+}
+.mock-cb-checked::after {
+  content: '\2713';
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.mock-cb-unchecked {
+  border: 1.5px solid #c7c7cc;
+  background: white;
+}
+.mock-file-name { flex: 1; color: #333; }
+.mock-file-name.disabled { color: #999; text-decoration: line-through; }
+.mock-file-size { color: #86868b; font-size: 10px; }
+.mock-file-warn { color: var(--red); font-size: 10px; }
+
+/* Settings mockup */
+.mock-settings-section { margin-bottom: 20px; }
+.mock-settings-title { font-size: 15px; font-weight: 600; color: #1d1d1f; margin-bottom: 10px; }
+.mock-groupbox {
+  background: white;
+  border: 1px solid #e5e5ea;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.mock-groupbox-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #86868b;
+  margin-bottom: 8px;
+}
+.mock-path-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 11px;
+}
+.mock-path-lock { color: #86868b; font-size: 10px; }
+.mock-path-text { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11px; color: #333; }
+.mock-toggle-row-settings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.mock-toggle-sm {
+  width: 30px; height: 17px;
+  background: #34c759;
+  border-radius: 9px;
+  position: relative;
+  flex-shrink: 0;
+}
+.mock-toggle-sm::after {
+  content: '';
+  width: 13px; height: 13px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  right: 2px; top: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.mock-toggle-sm.off { background: #e5e5ea; }
+.mock-toggle-sm.off::after { right: auto; left: 2px; }
+
+/* ===== GUIDE ===== */
+.guide { background: var(--bg-warm); }
+.guide-steps {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  counter-reset: step;
+}
+.guide-step {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  position: relative;
+  counter-increment: step;
+  transition: all 0.3s;
+}
+.guide-step:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+.guide-step::before {
+  content: counter(step);
+  position: absolute;
+  top: 28px;
+  right: 24px;
+  font-family: var(--serif);
+  font-size: 48px;
+  font-weight: 700;
+  color: rgba(0,122,255,0.07);
+  line-height: 1;
+}
+.guide-step-icon {
+  font-size: 28px;
+  margin-bottom: 14px;
+}
+.guide-step h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-deep);
+  margin-bottom: 8px;
+}
+.guide-step p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.guide-step .step-tag {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 3px 10px;
+  background: var(--accent-soft);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* ===== TECH ===== */
+.tech { background: var(--text-deep); color: white; position: relative; overflow: hidden; }
+.tech::before {
+  content: '';
+  position: absolute;
+  top: -200px; right: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(0,122,255,0.08), transparent 70%);
+  pointer-events: none;
+}
+.tech .section-label { color: rgba(0,122,255,0.8); }
+.tech .section-title { color: white; }
+.tech .section-desc { color: rgba(255,255,255,0.5); }
+
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tech-item {
+  background: var(--text-deep);
+  padding: 28px 24px;
+  transition: background 0.3s;
+}
+.tech-item:hover { background: #242424; }
+.tech-item h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 6px;
+}
+.tech-item p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.6;
+}
+.tech-item .tech-icon {
+  font-size: 22px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  background: var(--text-deep);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 40px 0;
+  text-align: center;
+}
+footer p {
+  color: rgba(255,255,255,0.3);
+  font-size: 13px;
+}
+footer .footer-logo {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 18px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 8px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .container { padding: 0 20px; }
+  section { padding: 64px 0; }
+  .features-grid { grid-template-columns: 1fr; }
+  .guide-steps { grid-template-columns: 1fr; }
+  .tech-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .mac-sidebar { width: 120px; padding: 10px 6px; }
+  .mac-body { min-height: 280px; }
+  .hero-screenshot { margin: 40px -10px 0; }
+  .screenshot-tabs { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">
+      <img class="nav-logo-icon" src="logo.png" alt="BirdFileShield">
+      <span class="nav-logo-text">BirdFileShield</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">功能</a></li>
+      <li><a href="#screenshots">界面</a></li>
+      <li><a href="#guide">使用指南</a></li>
+      <li><a href="#tech">技术</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">跨平台 · Windows & macOS</div>
+    <h1 class="anim-fade-up">整理文件的同时<br>找回<span class="highlight">遗忘的资产</span></h1>
+    <p class="hero-sub anim-fade-up" style="animation-delay:0.15s">
+      17 种文件类型智能分类，一键告别杂乱目录。<br>
+      玩链久了，私钥藏在某个 txt 里，助记词夹在某张表格中，时间一长就彻底遗忘了——里面可能还有资金，找不到就等于丢了。<br>
+      BirdFileShield 在整理文件的同时，自动识别 ETH / BTC / Solana 私钥和助记词，帮你找出来、加密保护好。
+    </p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="#">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;"><path d="M8 1v9m0 0L4.5 6.5M8 10l3.5-3.5M2 13h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        免费下载
+      </a>
+      <a class="btn-secondary" href="#">GitHub →</a>
+    </div>
+
+    <!-- Hero Screenshot: Directory Picker -->
+    <div class="hero-screenshot">
+      <div class="mac-window">
+        <div class="mac-titlebar">
+          <div class="traffic-light tl-red"></div>
+          <div class="traffic-light tl-yellow"></div>
+          <div class="traffic-light tl-green"></div>
+          <span class="mac-title">BirdFileShield</span>
+        </div>
+        <div class="mac-body">
+          <div class="mac-sidebar">
+            <div class="sidebar-label">功能</div>
+            <div class="sidebar-item active"><span class="sidebar-icon">📂</span> 整理</div>
+            <div class="sidebar-item"><span class="sidebar-icon">⚙️</span> 设置</div>
+          </div>
+          <div class="mac-content" style="align-items:center; justify-content:center;">
+            <div class="mock-dropzone">
+              <div class="mock-dropzone-icon">📁</div>
+              <h3>拖拽文件夹到这里</h3>
+              <p>或者点击下方按钮选择</p>
+              <span class="mock-btn mock-btn-blue">选择目录</span>
+            </div>
+            <div class="mock-input-row">
+              <div class="mock-input">输入路径... 例如 ~/Downloads</div>
+              <div class="mock-btn-gray">前往</div>
+            </div>
+            <div class="mock-toggle-row">
+              <div class="mock-toggle"></div>
+              <span class="mock-toggle-label">归类文件夹</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-label">核心功能</div>
+    <div class="section-title">找回遗忘的资产<br>守护每一把私钥</div>
+    <p class="section-desc">自动扫描、智能识别、加密保护。让散落各处的钱包私钥无处遁形。</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon fi-blue">📊</div>
+        <h3>17 种智能分类</h3>
+        <p>文档、PDF、图片、音视频、代码、设计文件等，覆盖日常所有文件类型。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-green">🔑</div>
+        <h3>多链私钥检测</h3>
+        <p>支持 ETH（0x+64hex）、BTC WIF、Solana（Base58 & JSON 数组）、BIP39 助记词、PEM 私钥五种格式。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-orange">🔍</div>
+        <h3>深度子目录扫描</h3>
+        <p>递归扫描子目录中的文本文件，检测深藏的私钥和助记词，可配置扫描深度（默认2层）。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-red">📑</div>
+        <h3>Excel 表格扫描</h3>
+        <p>支持扫描 xlsx/xls 表格中隐藏的私钥信息，可在设置中选择扫描的文件后缀。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-purple">🔐</div>
+        <h3>AES-256 加密保护</h3>
+        <p>敏感文件自动打包为加密 ZIP，深度扫描结果独立打包，密码不存储。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-teal">🛡️</div>
+        <h3>危险路径防护</h3>
+        <p>自动拦截系统目录，symlink 检测，内置黑名单可自定义扩展。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Screenshots -->
+<section class="screenshots" id="screenshots">
+  <div class="container">
+    <div class="section-label">界面预览</div>
+    <div class="section-title">每一个像素<br>都经过打磨</div>
+    <p class="section-desc">Fluent Design 2 设计语言，干净直觉的交互体验。</p>
+
+    <div class="screenshot-tabs">
+      <button class="screenshot-tab active" onclick="showPanel('scan')">扫描结果</button>
+      <button class="screenshot-tab" onclick="showPanel('confirm')">确认整理</button>
+      <button class="screenshot-tab" onclick="showPanel('settings')">设置</button>
+    </div>
+
+    <div class="screenshot-panels">
+
+      <!-- Panel: Scan Result -->
+      <div class="screenshot-panel active" id="panel-scan">
+        <div class="mac-window" style="max-width:800px;">
+          <div class="mac-titlebar">
+            <div class="traffic-light tl-red"></div>
+            <div class="traffic-light tl-yellow"></div>
+            <div class="traffic-light tl-green"></div>
+            <span class="mac-title">BirdFileShield — ~/Downloads</span>
+          </div>
+          <div class="mac-body">
+            <div class="mac-sidebar">
+              <div class="sidebar-label">功能</div>
+              <div class="sidebar-item active"><span class="sidebar-icon">📂</span> 整理</div>
+              <div class="sidebar-item"><span class="sidebar-icon">⚙️</span> 设置</div>
+            </div>
+            <div class="mac-content">
+              <div class="mock-stat-bar">
+                <div>
+                  <div class="mock-stat-title">扫描结果</div>
+                  <div class="mock-stat-sub">共 48 个文件，256.3 MB</div>
+                </div>
+                <div class="mock-stat-actions">
+                  <span class="mock-btn mock-btn-gray">重新扫描</span>
+                  <span class="mock-btn mock-btn-blue">开始整理</span>
+                </div>
+              </div>
+
+              <div style="overflow-y:auto; flex:1;">
+                <!-- 文档 expanded -->
+                <div class="mock-category-card">
+                  <div class="mock-cat-header">
+                    <span class="mock-cat-icon">📄</span>
+                    <div class="mock-cat-info">
+                      <div class="mock-cat-name">文档</div>
+                      <div class="mock-cat-meta">12 个文件 · 8.5 MB</div>
+                    </div>
+                    <span class="mock-cat-chevron">▼</span>
+                  </div>
+                  <div class="mock-cat-files">
+                    <div class="mock-file-row">
+                      <div class="mock-checkbox mock-cb-checked"></div>
+                      <span class="mock-file-name">report-2024.docx</span>
+                      <span class="mock-file-size">2.1 MB</span>
+                    </div>
+                    <div class="mock-file-row">
+                      <div class="mock-checkbox mock-cb-checked"></div>
+                      <span class="mock-file-name">meeting-notes.txt</span>
+                      <span class="mock-file-warn">⚠️ 含私钥</span>
+                      <span class="mock-file-size">4 KB</span>
+                    </div>
+                    <div class="mock-file-row">
+                      <div class="mock-checkbox mock-cb-unchecked"></div>
+                      <span class="mock-file-name disabled">readme.rtf</span>
+                      <span class="mock-file-size" style="color:#ccc;">12 KB</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 图片 -->
+                <div class="mock-category-card">
+                  <div class="mock-cat-header">
+                    <span class="mock-cat-icon">🖼️</span>
+                    <div class="mock-cat-info">
+                      <div class="mock-cat-name">图片</div>
+                      <div class="mock-cat-meta">28 个文件 · 185.2 MB</div>
+                    </div>
+                    <span class="mock-cat-chevron">▶</span>
+                  </div>
+                </div>
+
+                <!-- 音视频 -->
+                <div class="mock-category-card">
+                  <div class="mock-cat-header">
+                    <span class="mock-cat-icon">🎬</span>
+                    <div class="mock-cat-info">
+                      <div class="mock-cat-name">音视频</div>
+                      <div class="mock-cat-meta">5 个文件 · 58.1 MB</div>
+                    </div>
+                    <span class="mock-cat-chevron">▶</span>
+                  </div>
+                </div>
+
+                <!-- 敏感配置 -->
+                <div class="mock-category-card">
+                  <div class="mock-cat-header">
+                    <span class="mock-cat-icon">🔒</span>
+                    <div class="mock-cat-info">
+                      <div class="mock-cat-name" style="display:flex;align-items:center;gap:4px;">敏感配置 <span style="font-size:9px;color:var(--orange);">🔒 将加密</span></div>
+                      <div class="mock-cat-meta">3 个文件 · 2.4 KB</div>
+                    </div>
+                    <span class="mock-cat-chevron">▶</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Confirm -->
+      <div class="screenshot-panel" id="panel-confirm">
+        <div class="mac-window" style="max-width:800px;">
+          <div class="mac-titlebar">
+            <div class="traffic-light tl-red"></div>
+            <div class="traffic-light tl-yellow"></div>
+            <div class="traffic-light tl-green"></div>
+            <span class="mac-title">BirdFileShield — 整理完成</span>
+          </div>
+          <div class="mac-body">
+            <div class="mac-sidebar">
+              <div class="sidebar-label">功能</div>
+              <div class="sidebar-item active"><span class="sidebar-icon">📂</span> 整理</div>
+              <div class="sidebar-item"><span class="sidebar-icon">⚙️</span> 设置</div>
+            </div>
+            <div class="mac-content" style="align-items:center; justify-content:center; text-align:center;">
+              <div style="font-size:48px; margin-bottom:8px;">✅</div>
+              <div style="font-size:16px; font-weight:600; color:#1d1d1f; margin-bottom:6px;">文件已复制到分类文件夹</div>
+              <div style="font-size:12px; color:#86868b; margin-bottom:4px;">共整理 45 个文件（248.7 MB）到 6 个分类文件夹</div>
+              <div style="font-size:11px; color:#86868b; max-width:300px; margin:0 auto 18px;">请前往目标目录确认文件完整无误后，再删除原文件。</div>
+              <div style="display:flex; gap:10px; justify-content:center; margin-bottom:10px;">
+                <span class="mock-btn" style="background:white; border:1px solid #d2d2d7; color:var(--accent); font-size:12px; padding:6px 14px;">在文件管理器中查看</span>
+                <span class="mock-btn" style="background:white; border:1px solid #d2d2d7; color:#86868b; font-size:12px; padding:6px 14px;">撤销整理</span>
+              </div>
+              <span class="mock-btn" style="background:var(--red); color:white; font-size:12px; padding:7px 18px;">确认无误，删除原文件</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Settings -->
+      <div class="screenshot-panel" id="panel-settings">
+        <div class="mac-window" style="max-width:800px;">
+          <div class="mac-titlebar">
+            <div class="traffic-light tl-red"></div>
+            <div class="traffic-light tl-yellow"></div>
+            <div class="traffic-light tl-green"></div>
+            <span class="mac-title">BirdFileShield — 设置</span>
+          </div>
+          <div class="mac-body">
+            <div class="mac-sidebar">
+              <div class="sidebar-label">功能</div>
+              <div class="sidebar-item"><span class="sidebar-icon">📂</span> 整理</div>
+              <div class="sidebar-item active"><span class="sidebar-icon">⚙️</span> 设置</div>
+            </div>
+            <div class="mac-content" style="overflow-y:auto;">
+              <div class="mock-settings-section">
+                <div class="mock-settings-title">危险路径管理</div>
+                <div style="font-size:11px; color:#86868b; margin-bottom:10px;">以下路径受保护，不允许作为整理目标。</div>
+                <div class="mock-groupbox">
+                  <div class="mock-groupbox-label">默认黑名单</div>
+                  <div class="mock-path-row"><span class="mock-path-lock">🔒</span><span class="mock-path-text">C:\Windows</span></div>
+                  <div class="mock-path-row"><span class="mock-path-lock">🔒</span><span class="mock-path-text">C:\Program Files</span></div>
+                  <div class="mock-path-row"><span class="mock-path-lock">🔒</span><span class="mock-path-text">/System</span></div>
+                  <div class="mock-path-row"><span class="mock-path-lock">🔒</span><span class="mock-path-text">/Library</span></div>
+                  <div class="mock-path-row"><span class="mock-path-lock">🔒</span><span class="mock-path-text">~/Library</span></div>
+                </div>
+                <div class="mock-groupbox">
+                  <div class="mock-groupbox-label">自定义路径</div>
+                  <div class="mock-path-row">
+                    <span class="mock-path-text">D:\Projects</span>
+                    <span style="margin-left:auto; color:var(--red); font-size:12px; cursor:pointer;">⊖</span>
+                  </div>
+                  <div style="display:flex; gap:6px; margin-top:8px;">
+                    <div class="mock-input" style="font-size:11px;">输入路径</div>
+                    <span class="mock-btn mock-btn-gray" style="font-size:11px;">添加</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mock-settings-section">
+                <div class="mock-settings-title">安全功能</div>
+                <div class="mock-toggle-row-settings">
+                  <div class="mock-toggle-sm"></div>
+                  <span style="font-size:13px; color:#333;">启用敏感文件加密</span>
+                </div>
+                <div style="margin-top:10px; padding-left:4px;">
+                  <div style="font-size:11px; color:#86868b; line-height:1.7;">
+                    启用后，整理时会：<br>
+                    • 敏感配置文件（.env, .yaml 等）加密打包<br>
+                    • 扫描文本文件及 xlsx 表格检测私钥<br>
+                    • 递归扫描子目录（可配置深度）<br>
+                    • 密码在整理时输入，不会保存到磁盘
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Guide -->
+<section class="guide" id="guide">
+  <div class="container">
+    <div class="section-label">使用指南</div>
+    <div class="section-title">四步完成<br>文件整理</div>
+    <p class="section-desc">简单直觉的操作流程，无需学习成本。</p>
+
+    <div class="guide-steps">
+      <div class="guide-step">
+        <div class="guide-step-icon">📂</div>
+        <h3>选择目标目录</h3>
+        <p>将文件夹拖入应用窗口，或点击「选择目录」按钮，也可以直接输入路径。支持 ~ 波浪线展开。</p>
+        <span class="step-tag">支持拖拽</span>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-icon">🔍</div>
+        <h3>预览分类结果</h3>
+        <p>应用自动扫描并按 17 种类型分类。展开查看每个文件，取消勾选不想整理的项目。含私钥或敏感信息的文件会被高亮标记。</p>
+        <span class="step-tag">可选择性整理</span>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-icon">📋</div>
+        <h3>执行整理</h3>
+        <p>点击「开始整理」，文件将被复制到目标目录下的分类子文件夹中（如 文档/、图片/）。敏感文件自动加密打包，原文件不会被移动或删除。</p>
+        <span class="step-tag">安全复制</span>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-icon">✅</div>
+        <h3>确认并清理</h3>
+        <p>在文件管理器中检查分类结果。确认无误后点击「删除原文件」。如果不满意，可以一键「撤销整理」回滚所有操作。</p>
+        <span class="step-tag">可回滚</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tech -->
+<section class="tech" id="tech">
+  <div class="container">
+    <div class="section-label">技术特点</div>
+    <div class="section-title">跨平台架构<br>安全至上</div>
+    <p class="section-desc">Electron + React + TypeScript 全栈构建，无需网络，所有操作在本地完成。</p>
+
+    <div class="tech-grid">
+      <div class="tech-item">
+        <span class="tech-icon">⚡</span>
+        <h4>Electron + React</h4>
+        <p>TypeScript 全栈，electron-vite 构建，Fluent Design 2 UI，Windows & macOS 双平台。</p>
+      </div>
+      <div class="tech-item">
+        <span class="tech-icon">🔒</span>
+        <h4>AES-256 加密</h4>
+        <p>archiver-zip-encrypted，密码仅存在于内存中，从不写入磁盘。</p>
+      </div>
+      <div class="tech-item">
+        <span class="tech-icon">🧠</span>
+        <h4>多链私钥检测</h4>
+        <p>正则匹配 ETH/BTC WIF/Solana/PEM，BIP39 2048 词库比对，xlsx 解析。</p>
+      </div>
+      <div class="tech-item">
+        <span class="tech-icon">🔄</span>
+        <h4>操作日志回滚</h4>
+        <p>每步操作记录，出错时反向遍历回滚，确保数据零丢失。</p>
+      </div>
+      <div class="tech-item">
+        <span class="tech-icon">🚫</span>
+        <h4>完全离线</h4>
+        <p>无网络连接，无遥测，无数据上传。你的文件永远不会离开你的电脑。</p>
+      </div>
+      <div class="tech-item">
+        <span class="tech-icon">🖥️</span>
+        <h4>跨平台</h4>
+        <p>Windows exe + macOS dmg，GitHub Actions CI 自动构建。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-logo">BirdFileShield</div>
+    <p>跨平台智能文件整理 & 私钥守护工具 · Electron + React + TypeScript · 完全开源</p>
+    <p style="margin-top:6px;">Made with precision. 2024-2026.</p>
+  </div>
+</footer>
+
+<script>
+function showPanel(name) {
+  document.querySelectorAll('.screenshot-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.screenshot-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Scroll-triggered animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.feature-card, .guide-step, .tech-item').forEach((el, i) => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(24px)';
+  el.style.transition = `all 0.6s cubic-bezier(0.16,1,0.3,1) ${i % 3 * 0.1}s`;
+  observer.observe(el);
+});
+</script>
+
+</body>
+</html>

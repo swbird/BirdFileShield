@@ -1,0 +1,80 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - working-directory: allplatform
+        run: npm ci
+      - working-directory: allplatform
+        run: npm run test
+
+  build-windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - working-directory: allplatform
+        run: npm ci
+      - working-directory: allplatform
+        run: npm run build
+      - working-directory: allplatform
+        run: npx electron-builder --win --x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: allplatform/dist/*.exe
+
+  build-macos:
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - working-directory: allplatform
+        run: npm ci
+      - working-directory: allplatform
+        run: npm run build
+      - working-directory: allplatform
+        run: npx electron-builder --mac --x64 --arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: allplatform/dist/*.dmg
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: artifacts/
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-build
+          path: artifacts/
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
