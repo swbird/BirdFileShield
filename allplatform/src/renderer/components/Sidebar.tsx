@@ -1,6 +1,7 @@
 import React from 'react'
 import { useAppStore } from '../stores/appStore'
-import { BirdShield, IFolder, ISettings, ILock } from './icons'
+import logoImg from '../../../resources/icon.png'
+import { IFolder, ISettings, ILock } from './icons'
 
 export function Sidebar() {
   const selectedPage = useAppStore((s) => s.selectedPage)
@@ -9,7 +10,7 @@ export function Sidebar() {
   return (
     <nav className="sidebar">
       <div className="sidebar-header">
-        <div className="bfs-brand-mark"><BirdShield size={20}/></div>
+        <img className="bfs-brand-logo" src={logoImg} alt="logo" />
         <div className="sidebar-brand-text">
           <div className="sidebar-brand-name">BirdFileShield</div>
           <div className="sidebar-brand-version">v1.0.0</div>

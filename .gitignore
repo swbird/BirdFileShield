@@ -6,6 +6,7 @@ docs/
 build/
 out/
 dist/
+mac_old
 .DS_Store
 *.dmg
 *.exe
