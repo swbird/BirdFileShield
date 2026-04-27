@@ -131,8 +131,7 @@ export function DirectoryPickerPage() {
             ? <>将扫描 <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{activePath}</span></>
             : '选择目录后开始'}
         </span>
-        <button className="btn-primary" disabled={!canScan} onClick={handleScan}
-                style={{ padding: '10px 28px', fontSize: 14 }}>
+        <button className="btn-primary btn-lg" disabled={!canScan} onClick={handleScan}>
           <ISearch size={16}/> 开始扫描
         </button>
       </div>
