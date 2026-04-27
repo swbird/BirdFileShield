@@ -161,9 +161,11 @@ export const useAppStore = create<AppStore>((set, get) => {
     },
 
     confirmAndDeleteOriginals: async () => {
+      const { scanResult } = get()
+      if (!scanResult) return
       try {
         set({ organizerState: { phase: 'deleting', progress: 0, currentFile: '' } })
-        await window.api.deleteOriginals()
+        await window.api.deleteOriginals(scanResult)
       } catch (e) {
         set({ errorMessage: String(e) })
       }
