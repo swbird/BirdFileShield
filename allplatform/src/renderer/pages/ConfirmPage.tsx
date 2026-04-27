@@ -9,10 +9,11 @@ import {
   DialogActions,
 } from '@fluentui/react-components'
 import { useAppStore } from '../stores/appStore'
+import { ICheck, IAlert, IExternal, ITrash, IUndo } from '../components/icons'
+import { formatSize } from '../components/CategoryCard'
 
 export function ConfirmPage() {
   const scanResult = useAppStore((s) => s.scanResult)
-  const organizerState = useAppStore((s) => s.organizerState)
   const openInExplorer = useAppStore((s) => s.openInExplorer)
   const rollbackOrganizing = useAppStore((s) => s.rollbackOrganizing)
   const confirmAndDeleteOriginals = useAppStore((s) => s.confirmAndDeleteOriginals)
@@ -21,23 +22,13 @@ export function ConfirmPage() {
 
   if (!scanResult) return null
 
-  // Get stats from organizerState if available (it was completed phase when copying finished)
-  // Otherwise count from scanResult
   const allFiles = Object.values(scanResult.categorizedFiles).flat()
   const selectedFiles = allFiles.filter((f) => f.isSelected)
   const totalSize = selectedFiles.reduce((acc, f) => acc + f.size, 0)
   const fileCount = selectedFiles.length
 
-  function formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
-  }
-
   const handleOpenFolder = () => {
-    const dir = scanResult.sourceDirectory
-    openInExplorer(dir)
+    openInExplorer(scanResult.sourceDirectory)
   }
 
   const handleDeleteConfirmed = async () => {
@@ -46,29 +37,43 @@ export function ConfirmPage() {
   }
 
   return (
-    <div className="confirm-page">
-      <div className="confirm-icon">✅</div>
-      <div className="confirm-title">文件已复制到分类文件夹</div>
-      <div className="confirm-subtitle">
-        已成功复制 {fileCount} 个文件（{formatSize(totalSize)}）到目标目录的分类文件夹中。
-        请先打开文件夹确认文件完整，再决定是否删除原文件。
-      </div>
-      <div className="confirm-subtitle" style={{ color: 'var(--warning)', marginTop: 4 }}>
-        ⚠️ 删除原文件操作不可撤销，请谨慎操作。
+    <div className="bfs-status-page">
+      <div className="bfs-confirm-hero">
+        <div className="bfs-confirm-icon"><ICheck size={28} stroke={2.5}/></div>
+        <div className="bfs-confirm-title">文件已成功复制</div>
+        <div className="bfs-confirm-sub">
+          {fileCount} 个文件（{formatSize(totalSize)}）已分类归档到目标目录的子文件夹中。
+        </div>
+        <Button appearance="subtle" onClick={handleOpenFolder} icon={<IExternal size={12}/>} size="small"
+                style={{ marginTop: 12 }}>
+          在文件管理器中打开
+        </Button>
       </div>
 
-      <div className="confirm-actions">
-        <Button appearance="primary" onClick={handleOpenFolder}>
-          打开文件夹确认
-        </Button>
-        <Button appearance="secondary" onClick={rollbackOrganizing}>
-          撤销整理
+      <div className="bfs-callout">
+        <IAlert size={16} style={{ flexShrink: 0, marginTop: 1 }}/>
+        <div>
+          <b>下一步将永久删除原始文件。</b>请先打开目标文件夹核对所有文件再继续——此操作不可撤销。
+        </div>
+      </div>
+
+      <div className="bfs-confirm-actions">
+        <Button
+          style={{ backgroundColor: 'var(--danger)', color: '#fff', border: 'none', width: '100%', justifyContent: 'center' }}
+          onClick={() => setShowDeleteDialog(true)}
+          icon={<ITrash size={14}/>}
+          size="large"
+        >
+          已核对，删除原文件
         </Button>
         <Button
-          style={{ backgroundColor: 'var(--danger)', color: '#fff', border: 'none' }}
-          onClick={() => setShowDeleteDialog(true)}
+          appearance="secondary"
+          onClick={rollbackOrganizing}
+          icon={<IUndo size={14}/>}
+          size="large"
+          style={{ width: '100%', justifyContent: 'center' }}
         >
-          确认无误，删除原文件
+          撤销整理，恢复原状
         </Button>
       </div>
 

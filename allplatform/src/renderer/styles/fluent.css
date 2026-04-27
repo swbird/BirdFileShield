@@ -335,20 +335,76 @@ body {
 .private-key-icon { color: var(--danger); }
 .file-size { font-size: 12px; color: var(--text-tertiary); }
 
-/* ── Progress / Confirm / Completed pages ── */
-.progress-page, .confirm-page, .completed-page {
+/* ── Status Pages (progress / confirm / completed) ── */
+.bfs-status-page {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; min-height: 60vh; gap: 12px; text-align: center;
 }
-.progress-title { font-size: 16px; color: var(--text-primary); }
-.progress-bar { width: 300px; }
-.progress-percent { font-size: 24px; font-weight: 600; color: var(--accent); }
-.progress-file { font-size: 12px; color: var(--text-tertiary); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.confirm-icon, .completed-icon { font-size: 48px; }
-.confirm-title, .completed-title { font-size: 18px; font-weight: 600; }
-.confirm-subtitle { font-size: 13px; color: var(--text-tertiary); max-width: 400px; }
-.confirm-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; min-width: 200px; }
-.completed-stats { font-size: 13px; color: var(--text-tertiary); margin-bottom: 12px; }
+.bfs-status-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.bfs-status-sub {
+  font-size: 12px; color: var(--text-tertiary); max-width: 380px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+.bfs-orb {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.bfs-orb::after {
+  content: ''; position: absolute; inset: -8px; border-radius: 50%;
+  border: 2px solid var(--accent); opacity: 0;
+  animation: bfs-ripple 2s ease-out infinite;
+}
+@keyframes bfs-ripple {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.bfs-percent {
+  margin-top: 8px; font-size: 24px; font-weight: 600;
+  font-family: var(--font-mono); letter-spacing: -0.02em; color: var(--accent);
+}
+
+.bfs-confirm-hero { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.bfs-confirm-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--ok-soft); color: var(--ok);
+  display: flex; align-items: center; justify-content: center;
+}
+.bfs-confirm-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.bfs-confirm-sub { font-size: 13px; color: var(--text-tertiary); max-width: 400px; }
+
+.bfs-callout {
+  display: flex; gap: 12px; padding: 14px 16px;
+  background: var(--warn-soft); border-radius: var(--radius);
+  color: var(--warning); font-size: 13px; text-align: left;
+  max-width: 420px; line-height: 1.5;
+}
+.bfs-callout b { color: var(--text-primary); }
+
+.bfs-confirm-actions {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 16px; min-width: 280px;
+}
+
+.bfs-done-mark {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--ok-soft); color: var(--ok);
+  display: flex; align-items: center; justify-content: center;
+}
+.bfs-done-title { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.bfs-done-sub { font-size: 13px; color: var(--text-tertiary); max-width: 400px; }
+
+.bfs-done-stats { display: flex; gap: 16px; margin-top: 20px; }
+.bfs-done-stat {
+  background: var(--bg-card); border-radius: var(--radius);
+  padding: 16px 24px; text-align: center; box-shadow: var(--shadow);
+  min-width: 100px;
+}
+.bfs-done-stat .n { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+.bfs-done-stat .l { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
 
 /* ── Settings ── */
 .settings-page { max-width: 600px; }
