@@ -5,10 +5,10 @@ import { registerIpcHandlers } from './ipc'
 function createWindow(): void {
   const isMac = process.platform === 'darwin'
   const win = new BrowserWindow({
-    width: 900,
-    height: 600,
-    minWidth: 700,
-    minHeight: 500,
+    width: 1180,
+    height: 760,
+    minWidth: 1100,
+    minHeight: 720,
     title: 'BirdFileShield',
     ...(isMac
       ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 12, y: 12 } }

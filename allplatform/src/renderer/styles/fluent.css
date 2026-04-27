@@ -183,6 +183,7 @@ body {
 
 .bfs-path-row { margin-top: 16px; }
 .bfs-path-input { width: 100%; }
+.bfs-path-input:focus-within { box-shadow: 0 0 0 3px var(--accent-soft); border-radius: calc(var(--radius) - 2px); }
 
 .bfs-options-row {
   margin-top: 18px;
@@ -208,6 +209,9 @@ body {
   margin-top: 36px;
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
 }
+@media (max-width: 1100px) {
+  .bfs-feature-strip { grid-template-columns: 1fr; }
+}
 .bfs-feat {
   display: flex; gap: 12px; align-items: flex-start;
   padding: 14px; background: var(--bg-card);
@@ -230,7 +234,7 @@ body {
   display: inline-flex; align-items: center; gap: 6px;
 }
 .btn-primary:hover { background: var(--accent-ink); }
-.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-lg { height: 40px; padding: 0 22px; font-size: 14px; border-radius: 10px; }
 .btn-secondary {
   padding: 8px 20px; background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border);
