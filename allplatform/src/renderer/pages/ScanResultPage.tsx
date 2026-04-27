@@ -1,16 +1,10 @@
 import React from 'react'
 import { Button } from '@fluentui/react-components'
 import { useAppStore } from '../stores/appStore'
-import { CategoryCard } from '../components/CategoryCard'
-import type { FileCategory } from '../../shared/types'
-import type { ScannedFile } from '../../shared/types'
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
-}
+import { CategoryCard, formatSize } from '../components/CategoryCard'
+import { KeyVaultHero } from '../components/KeyVaultHero'
+import { IArrowLeft, IRefresh, IArrowRight, IFolder } from '../components/icons'
+import type { FileCategory, ScannedFile } from '../../shared/types'
 
 export function ScanResultPage() {
   const scanResult = useAppStore((s) => s.scanResult)
@@ -21,55 +15,74 @@ export function ScanResultPage() {
   if (!scanResult) return null
 
   const entries = Object.entries(scanResult.categorizedFiles) as [FileCategory, ScannedFile[]][]
-  // Sort by file count descending
   const sorted = entries.sort((a, b) => b[1].length - a[1].length)
 
-  const allFiles: ScannedFile[] = entries.flatMap(([, files]) => files)
+  const allFiles = entries.flatMap(([, files]) => files)
   const totalCount = allFiles.length
   const totalSize = allFiles.reduce((acc, f) => acc + f.size, 0)
   const selectedCount = allFiles.filter((f) => f.isSelected).length
   const categoryCount = entries.length
-  const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1)
+  const sensitiveFiles = allFiles.filter(f => f.containsPrivateKey)
+  const keyCount = sensitiveFiles.length
+  const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(0)
 
   return (
     <div className="scan-result-page">
-      <div className="scan-header">
-        <div className="scan-header-left">
-          <Button appearance="subtle" onClick={reset}>← 返回</Button>
+      <div className="bfs-result-toolbar">
+        <div className="bfs-toolbar-left">
+          <Button appearance="subtle" onClick={reset} icon={<IArrowLeft size={14}/>}>
+            返回
+          </Button>
+          <span className="bfs-path-pill">
+            <IFolder size={11}/> {scanResult.sourceDirectory}
+          </span>
         </div>
-        <div className="scan-header-right">
-          <Button appearance="secondary" onClick={scan}>重新扫描</Button>
+        <div className="bfs-toolbar-right">
+          <Button appearance="secondary" onClick={scan} icon={<IRefresh size={14}/>}>
+            重新扫描
+          </Button>
           <Button
             appearance="primary"
             onClick={startOrganizing}
             disabled={selectedCount === 0}
+            icon={<IArrowRight size={14}/>}
+            iconPosition="after"
           >
-            开始整理
+            开始整理 ({selectedCount})
           </Button>
         </div>
       </div>
 
+      <div className="bfs-page-head">
+        <h2>扫描结果</h2>
+        <p>检查并取消勾选不需要整理的文件，确认后开始复制。</p>
+      </div>
+
       <div className="stats-summary">
         <div className="stats-item">
-          <div className="stats-number" style={{ color: '#0078d4' }}>{totalCount}</div>
-          <div className="stats-label">总文件数</div>
+          <div className="stats-number" style={{ color: 'var(--accent)' }}>{totalCount}</div>
+          <div className="stats-label"><b>{selectedCount}</b> 已选 / {totalCount} 个文件</div>
         </div>
         <div className="stats-divider" />
         <div className="stats-item">
-          <div className="stats-number" style={{ color: '#107c41' }}>{totalSizeMB}</div>
-          <div className="stats-label">总大小 (MB)</div>
+          <div className="stats-number">
+            {totalSizeMB}<span style={{ fontSize: 14, color: 'var(--text-tertiary)', marginLeft: 4 }}>MB</span>
+          </div>
+          <div className="stats-label">将处理的总数据量</div>
         </div>
         <div className="stats-divider" />
         <div className="stats-item">
-          <div className="stats-number" style={{ color: '#6b4bc4' }}>{categoryCount}</div>
-          <div className="stats-label">分类数量</div>
+          <div className="stats-number" style={{ color: 'var(--key-accent)' }}>{keyCount}</div>
+          <div className="stats-label">{keyCount} 个文件中发现私钥</div>
         </div>
         <div className="stats-divider" />
         <div className="stats-item">
-          <div className="stats-number" style={{ color: '#e67700' }}>{selectedCount}</div>
-          <div className="stats-label">已选文件</div>
+          <div className="stats-number" style={{ color: 'var(--ok)' }}>{categoryCount}</div>
+          <div className="stats-label">个分类待归档</div>
         </div>
       </div>
+
+      {keyCount > 0 && <KeyVaultHero files={sensitiveFiles} />}
 
       <div className="category-list">
         {sorted.map(([category, files]) => (
