@@ -64,6 +64,28 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ── Fluent UI overrides ── */
+.fui-Input {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+.fui-Input::after,
+.fui-Input::before {
+  display: none !important;
+}
+.fui-Input:focus-within {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+
+.fui-Switch__indicator::before,
+.fui-Switch__indicator::after,
+.fui-Checkbox__indicator::before,
+.fui-Checkbox__indicator::after {
+  box-shadow: none !important;
+}
+
 body {
   font-family: var(--font-ui);
   background: var(--bg-primary);
@@ -89,7 +111,7 @@ body {
   flex-shrink: 0;
 }
 .titlebar-brand { display: flex; align-items: center; gap: 8px; }
-.titlebar-mac { justify-content: flex-end; }
+.titlebar-mac { justify-content: center; }
 .titlebar-logo {
   width: 22px; height: 22px;
   border-radius: 4px;
@@ -109,11 +131,10 @@ body {
 }
 
 .sidebar-header { padding: 16px 16px 14px; display: flex; align-items: center; gap: 10px; }
-.bfs-brand-mark {
+.bfs-brand-logo {
   width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
   border-radius: 8px;
-  background: var(--accent); color: white;
+  object-fit: contain;
   flex-shrink: 0;
 }
 .sidebar-brand-text .sidebar-brand-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
@@ -183,7 +204,6 @@ body {
 
 .bfs-path-row { margin-top: 16px; }
 .bfs-path-input { width: 100%; }
-.bfs-path-input:focus-within { box-shadow: 0 0 0 3px var(--accent-soft); border-radius: calc(var(--radius) - 2px); }
 
 .bfs-options-row {
   margin-top: 18px;
