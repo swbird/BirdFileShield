@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Input, Switch } from '@fluentui/react-components'
 import { useAppStore } from '../stores/appStore'
+import { IUpload } from '../components/icons'
 
 export function DirectoryPickerPage() {
   const [isDragOver, setIsDragOver] = useState(false)
@@ -70,7 +71,7 @@ export function DirectoryPickerPage() {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <div className="drop-icon">📂</div>
+          <div className="drop-icon"><IUpload size={48}/></div>
           <div className="drop-title">拖放文件夹到这里</div>
           <div className="drop-subtitle">支持拖拽、路径输入或浏览选择</div>
           <div className="drop-actions">
