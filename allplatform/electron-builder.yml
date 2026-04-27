@@ -7,7 +7,7 @@ files:
   - out/**/*
   - resources/**/*
 win:
-  target: nsis
+  target: portable
   icon: resources/icon.ico
 mac:
   target:
@@ -16,6 +16,3 @@ mac:
         - x64
         - arm64
   icon: resources/icon.icns
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
