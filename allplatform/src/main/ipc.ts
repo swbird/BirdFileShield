@@ -23,7 +23,7 @@ dangerousPathManager.loadUserPaths(store.get('userPaths', []))
 const scanner = new FileScanner()
 const organizer = new FileOrganizer()
 const sensitiveHandler = new SensitiveFileHandler(
-  path.join(app.isPackaged ? process.resourcesPath : app.getAppPath(), 'resources', 'BIP39WordList.txt')
+  path.join(app.getAppPath(), 'resources', 'BIP39WordList.txt')
 )
 
 export function registerIpcHandlers(): void {

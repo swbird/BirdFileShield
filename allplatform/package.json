@@ -1,6 +1,6 @@
 {
   "name": "bird-file-shield",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "BirdFileShield - Smart File Organizer & Private Key Guardian",
   "main": "./out/main/index.js",
   "scripts": {

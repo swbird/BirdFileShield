@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import archiver from 'archiver'
 import * as XLSX from 'xlsx'
+import ZipEncrypted from 'archiver-zip-encrypted'
 
 const PEM_PATTERN = /-----BEGIN[\s\S]*?PRIVATE KEY-----/
 const ETH_KEY_PATTERN = /\b0x[0-9a-fA-F]{64}\b/
@@ -97,12 +98,10 @@ export class SensitiveFileHandler {
   }
 
   async encryptAndArchive(files: string[], password: string, destination: string, rootDir?: string): Promise<void> {
-    // Register the encrypted zip format if not already registered
-    const ZipEncrypted = require('archiver-zip-encrypted')
     try {
       archiver.registerFormat('zip-encrypted', ZipEncrypted)
     } catch {
-      // format already registered — safe to ignore
+      // format already registered
     }
 
     return new Promise((resolve, reject) => {
