@@ -28,10 +28,10 @@ export function DirectoryPickerPage() {
     setIsDragOver(false)
     const file = e.dataTransfer.files[0]
     if (file) {
-      const path = (file as File & { path?: string }).path
-      if (path) {
-        setDirectory(path)
-        setInputPath(path)
+      const filePath = (window as any).api.getPathForFile(file)
+      if (filePath) {
+        setDirectory(filePath)
+        setInputPath(filePath)
       }
     }
   }

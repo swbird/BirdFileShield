@@ -112,6 +112,17 @@ body {
 }
 .titlebar-brand { display: flex; align-items: center; gap: 8px; }
 .titlebar-mac { justify-content: center; }
+.titlebar-controls {
+  display: flex; align-items: center; margin-left: auto;
+  -webkit-app-region: no-drag;
+}
+.tb-btn {
+  width: 46px; height: 32px; border: none; background: transparent;
+  color: var(--text-secondary); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s;
+}
+.tb-btn:hover { background: var(--chip-bg); }
+.tb-close:hover { background: #e81123; color: #fff; }
 .titlebar-logo {
   width: 22px; height: 22px;
   border-radius: 4px;

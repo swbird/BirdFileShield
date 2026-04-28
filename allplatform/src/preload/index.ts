@@ -1,6 +1,10 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 contextBridge.exposeInMainWorld('api', {
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
+  minimize: () => ipcRenderer.invoke('window:minimize'),
+  maximize: () => ipcRenderer.invoke('window:maximize'),
+  close: () => ipcRenderer.invoke('window:close'),
   pickDirectory: () => ipcRenderer.invoke('dialog:pick-directory'),
   setDirectory: (p: string) => ipcRenderer.invoke('directory:set', p),
   scan: (dir: string, includeFolders: boolean, deepScan: boolean) => ipcRenderer.invoke('scan:start', dir, includeFolders, deepScan),

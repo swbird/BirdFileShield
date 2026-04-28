@@ -33,6 +33,17 @@ export function registerIpcHandlers(): void {
     if (win) win.webContents.send('organize:progress', state)
   })
 
+  ipcMain.handle('window:minimize', () => {
+    BrowserWindow.getFocusedWindow()?.minimize()
+  })
+  ipcMain.handle('window:maximize', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) win.isMaximized() ? win.unmaximize() : win.maximize()
+  })
+  ipcMain.handle('window:close', () => {
+    BrowserWindow.getFocusedWindow()?.close()
+  })
+
   ipcMain.handle('dialog:pick-directory', async () => {
     const win = BrowserWindow.getFocusedWindow()
     if (!win) return null
