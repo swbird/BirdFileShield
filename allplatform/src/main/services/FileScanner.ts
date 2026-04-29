@@ -6,6 +6,11 @@ import { getCategoryFromExtension, getAllDisplayNames } from '../models/FileCate
 
 const categoryFolderNames = new Set(getAllDisplayNames())
 
+const SENSITIVE_DOTFILES = new Set([
+  '.env', '.env.local', '.env.production', '.env.development', '.env.staging',
+  '.npmrc', '.pypirc', '.netrc', '.pgpass', '.my.cnf',
+])
+
 const TEXT_CATEGORIES = new Set([
   FileCategory.Document,
   FileCategory.Code,
@@ -38,7 +43,8 @@ export class FileScanner {
     }
 
     for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue
+      const isSensitiveDotfile = SENSITIVE_DOTFILES.has(entry.name)
+      if (entry.name.startsWith('.') && !isSensitiveDotfile) continue
 
       const fullPath = path.join(directory, entry.name)
       let stat: fs.Stats
@@ -58,7 +64,7 @@ export class FileScanner {
             size: this.directorySize(fullPath),
             category: FileCategory.Folder,
             modificationDate: stat.mtimeMs,
-            isSelected: true,
+            isSelected: false,
             containsPrivateKey: false,
             fromDeepScan: false,
           }
@@ -69,7 +75,7 @@ export class FileScanner {
       }
 
       const ext = path.extname(entry.name).slice(1)
-      const category = getCategoryFromExtension(ext)
+      const category = isSensitiveDotfile ? FileCategory.SensitiveConfig : getCategoryFromExtension(ext)
 
       const file: ScannedFile = {
         id: uuid(),
@@ -104,7 +110,8 @@ export class FileScanner {
     }
 
     for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue
+      const isSensitiveDotfile = SENSITIVE_DOTFILES.has(entry.name)
+      if (entry.name.startsWith('.') && !isSensitiveDotfile) continue
       const fullPath = path.join(currentDir, entry.name)
 
       if (entry.isDirectory()) {
@@ -122,7 +129,7 @@ export class FileScanner {
       if (currentDir === rootDir) continue
 
       const ext = path.extname(entry.name).slice(1)
-      const category = getCategoryFromExtension(ext)
+      const category = isSensitiveDotfile ? FileCategory.SensitiveConfig : getCategoryFromExtension(ext)
       if (!TEXT_CATEGORIES.has(category)) continue
 
       let stat: fs.Stats
@@ -139,7 +146,7 @@ export class FileScanner {
         size: stat.size,
         category,
         modificationDate: stat.mtimeMs,
-        isSelected: true,
+        isSelected: false,
         containsPrivateKey: false,
         fromDeepScan: true,
       }

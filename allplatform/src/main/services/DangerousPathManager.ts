@@ -40,8 +40,11 @@ export class DangerousPathManager {
   isSafe(targetPath: string): boolean {
     const normalized = path.resolve(targetPath)
 
-    if (this.defaultPaths.has(normalized) || this.userPaths.has(normalized)) {
-      return false
+    for (const dangerous of this.defaultPaths) {
+      if (normalized === dangerous || normalized.startsWith(dangerous + path.sep)) return false
+    }
+    for (const dangerous of this.userPaths) {
+      if (normalized === dangerous || normalized.startsWith(dangerous + path.sep)) return false
     }
 
     const basename = path.basename(normalized)
@@ -58,7 +61,7 @@ export class DangerousPathManager {
   }
 
   addUserPath(p: string): void {
-    this.userPaths.add(path.resolve(p))
+    this.userPaths.add(path.resolve(this.expandHome(p)))
   }
 
   removeUserPath(p: string): void {
@@ -75,5 +78,12 @@ export class DangerousPathManager {
 
   loadUserPaths(paths: string[]): void {
     this.userPaths = new Set(paths.map(p => path.resolve(p)))
+  }
+
+  private expandHome(p: string): string {
+    if (p.startsWith('~/') || p === '~') {
+      return path.join(os.homedir(), p.slice(1))
+    }
+    return p
   }
 }

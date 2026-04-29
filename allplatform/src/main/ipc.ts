@@ -66,6 +66,9 @@ export function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('scan:start', (_e, dir: string, includeFolders: boolean, deepScan: boolean) => {
+    if (!dangerousPathManager.isSafe(dir)) {
+      throw new Error(`"${dir}" 是受保护的系统路径，无法扫描。`)
+    }
     const settings = store.get('settings')
     return scanner.scan(dir, includeFolders, deepScan, settings.deepScanDepth ?? 2)
   })
@@ -73,6 +76,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('organize:copy', async (_e, scanResult) => {
     organizer.reset()
     await organizer.copyFiles(scanResult)
+    return Object.fromEntries(organizer.getCopyMap())
   })
 
   ipcMain.handle('organize:delete-originals', async (_e, scanResult) => {
@@ -98,6 +102,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('security:handle-sensitive-files', async (_e, scanResult: ScanResult, password: string) => {
     const sourceDir = scanResult.sourceDirectory
+    const copyMap = organizer.getCopyMap()
 
     const allSensitive = (scanResult.categorizedFiles[FileCategory.SensitiveConfig] ?? [])
       .filter(f => f.isSelected)
@@ -107,18 +112,26 @@ export function registerIpcHandlers(): void {
     if (topSensitive.length > 0 || deepSensitive.length > 0) {
       const destDir = path.join(sourceDir, getCategoryDisplayName(FileCategory.SensitiveConfig))
       fs.mkdirSync(destDir, { recursive: true })
+      organizer.logCreatedDirectory(destDir)
       if (topSensitive.length > 0) {
-        await sensitiveHandler.encryptAndArchive(
-          topSensitive.map(f => f.path), password, path.join(destDir, '敏感配置.zip')
-        )
+        const copiedPaths = topSensitive.map(f => {
+          const dest = copyMap.get(f.id)
+          if (!dest) throw new Error(`敏感文件 "${f.name}" 未找到复制目标，中止处理以保护原文件。`)
+          return dest
+        })
+        const zipPath = path.join(destDir, '敏感配置.zip')
+        await sensitiveHandler.encryptAndArchive(copiedPaths, password, zipPath)
+        organizer.logCreatedFile(zipPath)
+        for (const p of copiedPaths) {
+          try { fs.unlinkSync(p) } catch { /* already removed */ }
+        }
       }
       if (deepSensitive.length > 0) {
+        const zipPath = path.join(destDir, '敏感配置_深度扫描.zip')
         await sensitiveHandler.encryptAndArchive(
-          deepSensitive.map(f => f.path), password, path.join(destDir, '敏感配置_深度扫描.zip'), sourceDir
+          deepSensitive.map(f => f.path), password, zipPath, sourceDir
         )
-      }
-      for (const file of allSensitive) {
-        try { fs.unlinkSync(path.join(destDir, file.name)) } catch { /* already removed */ }
+        organizer.logCreatedFile(zipPath)
       }
     }
 
@@ -135,19 +148,26 @@ export function registerIpcHandlers(): void {
     if (topPrivateKey.length > 0 || deepPrivateKey.length > 0) {
       const destDir = path.join(sourceDir, '含私钥文件')
       fs.mkdirSync(destDir, { recursive: true })
+      organizer.logCreatedDirectory(destDir)
       if (topPrivateKey.length > 0) {
-        await sensitiveHandler.encryptAndArchive(
-          topPrivateKey.map(f => f.path), password, path.join(destDir, '含私钥文件.zip')
-        )
+        const copiedPaths = topPrivateKey.map(f => {
+          const dest = copyMap.get(f.id)
+          if (!dest) throw new Error(`含私钥文件 "${f.name}" 未找到复制目标，中止处理以保护原文件。`)
+          return dest
+        })
+        const zipPath = path.join(destDir, '含私钥文件.zip')
+        await sensitiveHandler.encryptAndArchive(copiedPaths, password, zipPath)
+        organizer.logCreatedFile(zipPath)
+        for (const p of copiedPaths) {
+          try { fs.unlinkSync(p) } catch { /* already removed */ }
+        }
       }
       if (deepPrivateKey.length > 0) {
+        const zipPath = path.join(destDir, '含私钥文件_深度扫描.zip')
         await sensitiveHandler.encryptAndArchive(
-          deepPrivateKey.map(f => f.path), password, path.join(destDir, '含私钥文件_深度扫描.zip'), sourceDir
+          deepPrivateKey.map(f => f.path), password, zipPath, sourceDir
         )
-      }
-      for (const file of allPrivateKey) {
-        const catDir = path.join(sourceDir, getCategoryDisplayName(file.category))
-        try { fs.unlinkSync(path.join(catDir, file.name)) } catch { /* already removed */ }
+        organizer.logCreatedFile(zipPath)
       }
     }
   })

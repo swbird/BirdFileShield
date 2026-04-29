@@ -89,8 +89,8 @@ export function SettingsPage() {
           </div>
           <div className="bfs-settings-row">
             <div className="bfs-settings-text">
-              <div className="bfs-settings-t">深度扫描子目录</div>
-              <div className="bfs-settings-d">递归扫描子目录中的文本文件，发现的结果独立打包。</div>
+              <div className="bfs-settings-t">深度扫描私钥</div>
+              <div className="bfs-settings-d">递归扫描子目录中的文本文件，检测遗留的私钥与助记词，发现的敏感文件独立加密打包。</div>
             </div>
             <Switch
               checked={settings.deepScanEnabled}

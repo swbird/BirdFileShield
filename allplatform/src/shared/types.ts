@@ -46,6 +46,7 @@ export type OrganizerState =
 export type Operation =
   | { type: 'createdDirectory'; path: string }
   | { type: 'copiedFile'; source: string; destination: string }
+  | { type: 'createdFile'; path: string }
 
 export interface AppSettings {
   securityEnabled: boolean

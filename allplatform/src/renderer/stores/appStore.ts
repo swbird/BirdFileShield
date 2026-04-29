@@ -131,13 +131,8 @@ export const useAppStore = create<AppStore>((set, get) => {
       const { settings, scanResult, securityPassword } = get()
       if (!scanResult) return
 
-      const hasSensitive = (() => {
-        const sensitiveConfig = (scanResult.categorizedFiles as any)['sensitiveConfig'] as ScannedFile[] | undefined
-        const docs = (scanResult.categorizedFiles as any)['document'] as ScannedFile[] | undefined
-        const hasSensitiveConfig = sensitiveConfig?.some(f => f.isSelected) ?? false
-        const hasPrivateKey = docs?.some(f => f.isSelected && f.containsPrivateKey) ?? false
-        return hasSensitiveConfig || hasPrivateKey
-      })()
+      const hasSensitive = (Object.values(scanResult.categorizedFiles).flat() as ScannedFile[])
+        .some(f => f.isSelected && (f.category === ('sensitiveConfig' as FileCategory) || f.containsPrivateKey))
 
       if (settings.securityEnabled && hasSensitive && !securityPassword) {
         set({ showPasswordPrompt: true })

@@ -7,6 +7,7 @@ export class FileOrganizer {
   private operationLog: Operation[] = []
   private state: OrganizerState = { phase: 'idle' }
   private sendProgress: ((state: OrganizerState) => void) | null = null
+  private copyMap: Map<string, string> = new Map()
 
   setSendProgress(fn: (state: OrganizerState) => void): void {
     this.sendProgress = fn
@@ -16,6 +17,18 @@ export class FileOrganizer {
     return this.state
   }
 
+  getCopyMap(): Map<string, string> {
+    return this.copyMap
+  }
+
+  logCreatedFile(filePath: string): void {
+    this.operationLog.push({ type: 'createdFile', path: filePath })
+  }
+
+  logCreatedDirectory(dirPath: string): void {
+    this.operationLog.push({ type: 'createdDirectory', path: dirPath })
+  }
+
   private setState(newState: OrganizerState): void {
     this.state = newState
     if (this.sendProgress) this.sendProgress(newState)
@@ -23,19 +36,24 @@ export class FileOrganizer {
 
   async copyFiles(scanResult: ScanResult): Promise<void> {
     this.operationLog = []
-    const selectedFiles: { category: FileCategory; file: { path: string; name: string } }[] = []
+    this.copyMap = new Map()
+    const selectedFiles: { category: FileCategory; file: { id: string; path: string; name: string } }[] = []
 
     for (const [category, files] of Object.entries(scanResult.categorizedFiles)) {
       if (!files) continue
       for (const file of files) {
-        if (file.isSelected) {
-          selectedFiles.push({ category: category as FileCategory, file: { path: file.path, name: file.name } })
-        }
+        if (!file.isSelected) continue
+        if (file.fromDeepScan) continue
+        if ((category as FileCategory) === FileCategory.Folder) continue
+        selectedFiles.push({ category: category as FileCategory, file: { id: file.id, path: file.path, name: file.name } })
       }
     }
 
     const total = selectedFiles.length
-    if (total === 0) return
+    if (total === 0) {
+      this.setState({ phase: 'waitingConfirmation' })
+      return
+    }
 
     for (let i = 0; i < total; i++) {
       const { category, file } = selectedFiles[i]
@@ -52,6 +70,7 @@ export class FileOrganizer {
       try {
         fs.copyFileSync(file.path, destination)
         this.operationLog.push({ type: 'copiedFile', source: file.path, destination })
+        this.copyMap.set(file.id, destination)
       } catch (err) {
         await this.rollback()
         this.setState({ phase: 'failed', error: (err as Error).message })
@@ -65,7 +84,7 @@ export class FileOrganizer {
   async deleteOriginals(scanResult: ScanResult): Promise<void> {
     const selectedFiles = Object.values(scanResult.categorizedFiles)
       .flat()
-      .filter(f => f && f.isSelected)
+      .filter(f => f && f.isSelected && !f.fromDeepScan && f.category !== FileCategory.Folder)
 
     const total = selectedFiles.length
     if (total === 0) return
@@ -85,6 +104,8 @@ export class FileOrganizer {
     for (const op of [...this.operationLog].reverse()) {
       if (op.type === 'copiedFile') {
         try { fs.unlinkSync(op.destination) } catch { /* already removed */ }
+      } else if (op.type === 'createdFile') {
+        try { fs.unlinkSync(op.path) } catch { /* already removed */ }
       } else if (op.type === 'createdDirectory') {
         try {
           const contents = fs.readdirSync(op.path)
@@ -93,11 +114,13 @@ export class FileOrganizer {
       }
     }
     this.operationLog = []
+    this.copyMap = new Map()
     this.setState({ phase: 'idle' })
   }
 
   reset(): void {
     this.operationLog = []
+    this.copyMap = new Map()
     this.state = { phase: 'idle' }
   }
 

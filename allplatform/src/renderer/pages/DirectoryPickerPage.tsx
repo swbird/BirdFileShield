@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Input, Switch } from '@fluentui/react-components'
 import { useAppStore } from '../stores/appStore'
-import { IUpload, IFolder, IClipboard, ISearch, ILock, IShieldKey, IUndo } from '../components/icons'
+import { IUpload, IFolder, IClipboard, ISearch, ILock, IShieldKey, IUndo, IInfo } from '../components/icons'
 
 export function DirectoryPickerPage() {
   const [isDragOver, setIsDragOver] = useState(false)
@@ -115,10 +115,20 @@ export function DirectoryPickerPage() {
         </label>
         <label className="bfs-opt">
           <Switch
+            checked={settings.includeFolders}
+            onChange={(_, d) => updateSettings({ includeFolders: d.checked })}
+          />
+          <span>归类文件夹</span>
+        </label>
+        <label className="bfs-opt">
+          <Switch
             checked={settings.deepScanEnabled}
             onChange={(_, d) => updateSettings({ deepScanEnabled: d.checked })}
           />
-          <span>深度扫描子目录</span>
+          <span>深度扫描私钥</span>
+          <span className="bfs-info-tip" title="递归扫描子目录中的文本文件，检测遗留的私钥与助记词，发现的敏感文件独立加密打包。">
+            <IInfo size={14}/>
+          </span>
         </label>
         <span className="bfs-opt bfs-opt-local">
           <ILock size={13}/> 所有处理仅在本机
